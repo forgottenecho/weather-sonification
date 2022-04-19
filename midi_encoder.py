@@ -52,6 +52,9 @@ class Scale():
 
 def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type: int) -> None:
 
+    # create a scale object for note processing
+    scale = Scale(root_note, scale_type)
+
     # load up the data
     data = pandas.read_csv(data_path)
 
@@ -80,12 +83,13 @@ def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type
 
         # first data point has easy processing
         if i == 0:
+            output_notes.append(root_note)
             last_row = row
             last_note = root_note
             continue
 
         # end early for debug purposes
-        if i == 10:
+        if i == 50:
             break
         
         # handle first day's temp differenlty
@@ -106,19 +110,23 @@ def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type
             scale.step_up()
             note = scale.get_note()
 
+        # save the note to the ouput
+        output_notes.append(note)
+
+        # prepare for next iteration
         last_row = row
         last_note = note
 
-    print('debug')
+    print('Saving to file {}'.format(output_path))
 
 if __name__ == '__main__':
-    # code for testing Scale class
-    scale = Scale(60, 0) # init obj
-    for i in range(10): # ten steps up the scale
-        scale.step_up()
-        print(scale.get_note())
-    for i in range(20): # 20 steps down the scale
-        scale.step_down()
-        print(scale.get_note())
+    # # code for testing Scale class
+    # scale = Scale(60, 0) # init obj
+    # for i in range(10): # ten steps up the scale
+    #     scale.step_up()
+    #     print(scale.get_note())
+    # for i in range(20): # 20 steps down the scale
+    #     scale.step_down()
+    #     print(scale.get_note())
     
     weather_to_midi('nj_weather_data.csv', 'output.mid', 60, 0)
