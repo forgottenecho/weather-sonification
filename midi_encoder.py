@@ -55,6 +55,10 @@ def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type
     # create a scale object for note processing
     scale = Scale(root_note, scale_type)
 
+    # create and initialize midi object for midi file creation
+    midi_obj = MIDIFile(1) # 1 means 1 track
+    midi_obj.addTempo(0, 0, 130)
+
     # load up the data
     data = pandas.read_csv(data_path)
 
@@ -83,7 +87,7 @@ def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type
 
         # first data point has easy processing
         if i == 0:
-            output_notes.append(root_note)
+            midi_obj.addNote(track=0, channel=0, pitch=root_note, time=i, duration=1, volume=100)
             last_row = row
             last_note = root_note
             continue
@@ -111,13 +115,15 @@ def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type
             note = scale.get_note()
 
         # save the note to the ouput
-        output_notes.append(note)
+        midi_obj.addNote(track=0, channel=0, pitch=note, time=i, duration=1, volume=100)
 
         # prepare for next iteration
         last_row = row
         last_note = note
 
-    print('Saving to file {}'.format(output_path))
+    print('Saving to file {}...'.format(output_path))
+    with open(output_path, 'wb') as output_file:
+        midi_obj.writeFile(output_file)
 
 if __name__ == '__main__':
     # # code for testing Scale class

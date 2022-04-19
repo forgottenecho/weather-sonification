@@ -11,3 +11,6 @@ SNOW = snowfall
 WT16 = rain
 
 tmax = max temp
+
+
+http://www.guitarland.com/Music10/FGA/LectureMIDIscales.html
