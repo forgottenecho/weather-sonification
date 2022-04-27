@@ -57,7 +57,7 @@ def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type
 
     # create and initialize midi object for midi file creation
     midi_obj = MIDIFile(1) # 1 means 1 track
-    midi_obj.addTempo(0, 0, 130)
+    midi_obj.addTempo(0, 0, 800)
 
     # load up the data
     data = pandas.read_csv(data_path)
@@ -67,6 +67,10 @@ def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type
 
     # some datavalues are unrecored, replace the NaN with a 0
     data.fillna(0, inplace=True)
+
+    # compute threshold to separate strong storms from weaker ones,
+    # I used one std dev above the mean
+    thresh = data['PRCP'].mean() + data['PRCP'].std()
 
     #
     #
@@ -93,7 +97,7 @@ def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type
             continue
 
         # end early for debug purposes
-        if i == 50:
+        if i == 1000:
             break
         
         # handle first day's temp differenlty
@@ -116,6 +120,19 @@ def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type
 
         # save the note to the ouput
         midi_obj.addNote(track=0, channel=0, pitch=note, time=i, duration=1, volume=100)
+
+        # check if the precipitation was relativley high AND there was thunder
+        if row['PRCP'] > thresh and row['THDR'] == 1:
+            # add it to the bass end of the piano roll
+            midi_obj.addNote(track=0, channel=0, pitch=root_note-24, time=i, duration=8, volume=100)
+            midi_obj.addNote(track=0, channel=0, pitch=root_note-24+4, time=i, duration=8, volume=100)
+            midi_obj.addNote(track=0, channel=0, pitch=root_note-24+7, time=i, duration=8, volume=100)
+        
+
+        # print(row['THDR'])
+
+        # process snow
+        print(row['SNOW'])
 
         # prepare for next iteration
         last_row = row
