@@ -183,4 +183,4 @@ if __name__ == '__main__':
     #     print(scale.get_note())
     
     #FIXME make tempo a param below
-    weather_to_midi('nj_weather_data.csv', 'nj', 60, 0, 200)
+    weather_to_midi('la_weather_data.csv', 'la', 60, 0, 200)
