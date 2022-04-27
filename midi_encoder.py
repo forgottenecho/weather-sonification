@@ -50,20 +50,27 @@ class Scale():
     # reset back to root note
     def reset(self):
         self._curr_note = self._root_note
+        self._scale_ptr = 0
 
     # getter for _curr_note
     def get_note(self):
         return self._curr_note
 
-def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type: int) -> None:
+def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type: int, tempo: int) -> None:
 
     # create a scale object for note processing
     scale = Scale(root_note, scale_type)
 
-    # create and initialize midi object for midi file creation
-    midi_obj = MIDIFile(1) # 1 means 1 track
-    # midi_obj.addTempo(0, 0, 800)
-    midi_obj.addTempo(0, 0, 200)
+    # create and initialize midi object for midi file creation, one per variable
+    midi_temp = MIDIFile(1) # 1 means 1 track
+    midi_temp.addTempo(0, 0, tempo)
+
+    midi_thunder = MIDIFile(1) # 1 means 1 track
+    midi_thunder.addTempo(0, 0, tempo)
+
+    midi_snow = MIDIFile(1) # 1 means 1 track
+    midi_snow.addTempo(0, 0, tempo)
+
 
     # load up the data
     data = pandas.read_csv(data_path)
@@ -75,11 +82,11 @@ def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type
     data.fillna(0, inplace=True)
 
     # compute threshold to separate strong storms from weaker ones,
-    # I used one std dev above the mean
-    storm_thresh = data['PRCP'].mean() + data['PRCP'].std()
+    # I used a little less than one standard deviation above the mean
+    storm_thresh = data['PRCP'].mean() + 0.75 * data['PRCP'].std()
 
     # compute treshold for lots of snow in the same manner
-    snow_thresh = data['SNOW'].mean() + data['SNOW'].std()
+    snow_thresh = data['SNOW'].mean() + 0.75 * data['SNOW'].std()
 
     #
     #
@@ -100,7 +107,7 @@ def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type
 
         # first data point has easy processing
         if i == 0:
-            midi_obj.addNote(track=0, channel=0, pitch=root_note, time=i, duration=1, volume=100)
+            midi_temp.addNote(track=0, channel=0, pitch=root_note, time=i, duration=1, volume=100)
             last_row = row
             last_note = root_note
             continue
@@ -133,14 +140,14 @@ def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type
             note = scale.get_note()
 
         # save the note to the ouput
-        midi_obj.addNote(track=0, channel=0, pitch=note, time=i, duration=1, volume=100)
+        midi_temp.addNote(track=0, channel=0, pitch=note, time=i, duration=1, volume=100)
 
         # check if the precipitation was relativley high AND there was thunder
         if row['PRCP'] > storm_thresh and row['THDR'] == 1:
             # add it to the bass end of the piano roll
-            midi_obj.addNote(track=0, channel=0, pitch=root_note-24, time=i, duration=16, volume=100)
-            midi_obj.addNote(track=0, channel=0, pitch=root_note-24+4, time=i, duration=16, volume=100)
-            midi_obj.addNote(track=0, channel=0, pitch=root_note-24+12, time=i, duration=16, volume=100)
+            midi_thunder.addNote(track=0, channel=0, pitch=root_note-24, time=i, duration=16, volume=100)
+            midi_thunder.addNote(track=0, channel=0, pitch=root_note-24+4, time=i, duration=16, volume=100)
+            midi_thunder.addNote(track=0, channel=0, pitch=root_note-24+12, time=i, duration=16, volume=100)
         
 
         # print(row['THDR'])
@@ -149,17 +156,21 @@ def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type
         if row['SNOW'] > snow_thresh:
             # add four, "snowflake" sounding, high-pitched piano strokes
             for j in range(4):
-                midi_obj.addNote(track=0, channel=0, pitch=root_note+24, time=i+j, duration=1, volume=100)
-                midi_obj.addNote(track=0, channel=0, pitch=root_note+24+12, time=i+j, duration=1, volume=100)
+                midi_snow.addNote(track=0, channel=0, pitch=root_note+24, time=i+j, duration=1, volume=100)
+                midi_snow.addNote(track=0, channel=0, pitch=root_note+24+12, time=i+j, duration=1, volume=100)
 
 
         # prepare for next iteration
         last_row = row
         last_note = note
 
-    print('Saving to file {}...'.format(output_path))
-    with open(output_path, 'wb') as output_file:
-        midi_obj.writeFile(output_file)
+    print('Saving to file {0}_temp.mid, {0}_thunder.mid, {0}_snow.mid...'.format(output_path))
+    with open('{}_temp.mid'.format(output_path), 'wb') as output_file:
+        midi_temp.writeFile(output_file)
+    with open('{}_thunder.mid'.format(output_path), 'wb') as output_file:
+        midi_thunder.writeFile(output_file)
+    with open('{}_snow.mid'.format(output_path), 'wb') as output_file:
+        midi_snow.writeFile(output_file)
 
 if __name__ == '__main__':
     # # code for testing Scale class
@@ -172,4 +183,4 @@ if __name__ == '__main__':
     #     print(scale.get_note())
     
     #FIXME make tempo a param below
-    weather_to_midi('nj_weather_data.csv', 'output.mid', 60, 0)
+    weather_to_midi('nj_weather_data.csv', 'nj', 60, 0, 200)
