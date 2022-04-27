@@ -135,7 +135,7 @@ def weather_to_midi(data_path: str, output_path: str, root_note: int, scale_type
             note = scale.get_note()
 
         # see if not is too high pitched
-        if scale.get_note() > 127:
+        if scale.get_note() > 108: # ableton piano only goes up to C7
             scale.reset()
             note = scale.get_note()
 
